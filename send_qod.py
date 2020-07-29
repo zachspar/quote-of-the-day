@@ -1,17 +1,34 @@
 #!/usr/bin/env python3
 import os
+import random
 import requests
-from config import TWILIO_AUTH_TOKEN, TWILIO_ACCT_SID, OUTGOING_LIST, SENDING_NUMBER
+from config import (TWILIO_AUTH_TOKEN, TWILIO_ACCT_SID, OUTGOING_LIST,
+                    SENDING_NUMBER, QUOTES_API_KEY)
 from twilio.rest import Client
 
 
 def main():
-    account_sid = TWILIO_ACCT_SID
-    auth_token = TWILIO_AUTH_TOKEN
-    client = Client(account_sid, auth_token)
+    client = Client(TWILIO_ACCT_SID, TWILIO_AUTH_TOKEN)
 
-    res = requests.get("https://quotes.rest/qod?language=en")
-    print(f"Response Code: {res.status_code}")
+    headers = {
+        "X-TheySaidSo-Api-Secret": QUOTES_API_KEY,
+        "Accept": "application/json",
+    }
+
+    categories = ['love', 'management', 'inspire', 'sports', 'life', 'funny',
+                  'students', 'art',]
+
+    params = {
+        'category': random.choice(categories),
+        'language': 'en',
+    }
+
+    print(f"Category Today :: {params['category']}");
+    res = requests.get("https://quotes.rest/qod",
+                       headers=headers,
+                       params=params)
+    print(f"Response Code :: {res.status_code}")
+
     if res.status_code == 200:
         res_dict = res.json()
         quote_obj = res_dict['contents']['quotes'][0]
@@ -26,6 +43,8 @@ def main():
                                              from_=SENDING_NUMBER,
                                              to=str(number))
             print(message.sid)
+    else:
+        print("Could not properly execute request...")
 
 
 if __name__ == '__main__':
