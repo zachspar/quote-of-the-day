@@ -2,6 +2,7 @@
 import os
 import random
 import requests
+from requests.exceptions import ConnectionError
 from config import (TWILIO_AUTH_TOKEN, TWILIO_ACCT_SID, OUTGOING_LIST,
                     SENDING_NUMBER, QUOTES_API_KEY)
 from twilio.rest import Client
@@ -24,12 +25,19 @@ def main():
     }
 
     print(f"Category Today :: {params['category']}");
-    res = requests.get("https://quotes.rest/qod",
-                       headers=headers,
-                       params=params)
-    print(f"Response Code :: {res.status_code}")
+    res = None
+    count = 0
+    while count < 5 and not res:
+        count += 1
+        try:
+            res = requests.get("https://quotes.rest/qod",
+                               headers=headers,
+                               params=params)
+            print(f"Response Code :: {res.status_code}")
+        except ConnectionError as e:
+            print(f"API Connection error...{e}")
 
-    if res.status_code == 200:
+    if res and res.status_code == 200:
         res_dict = res.json()
         quote_obj = res_dict['contents']['quotes'][0]
         print(f"QUOTE: {quote_obj['quote']}")
@@ -44,7 +52,7 @@ def main():
                                              to=str(number))
             print(message.sid)
     else:
-        print("Could not properly execute request...")
+        print("ERROR: Could not properly execute quote request...")
 
 
 if __name__ == '__main__':
