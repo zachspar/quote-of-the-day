@@ -6,6 +6,7 @@ from requests.exceptions import ConnectionError
 from config import (TWILIO_AUTH_TOKEN, TWILIO_ACCT_SID, OUTGOING_LIST,
                     SENDING_NUMBER, QUOTES_API_KEY)
 from twilio.rest import Client
+from twilio.base.exceptions import TwilioRestException
 
 
 def main():
@@ -47,10 +48,14 @@ def main():
 
         for number in OUTGOING_LIST:
             print(f"Sending QOD to {number}")
-            message = client.messages.create(body=fmt_quote,
-                                             from_=SENDING_NUMBER,
-                                             to=str(number))
-            print(message.sid)
+            try:
+                message = client.messages.create(body=fmt_quote,
+                                                 from_=SENDING_NUMBER,
+                                                 to=str(number))
+                print(message.sid)
+            except TwilioRestException as e:
+                print(e)
+                print(f"ERROR: Could not send quote to phone number {number}")
     else:
         print("ERROR: Could not properly execute quote request...")
 
